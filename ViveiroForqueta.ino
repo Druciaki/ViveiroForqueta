@@ -17,7 +17,7 @@ int ultimo_minuto_lido = 0;
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("Iniciando");
+  Serial.println("Iniciando Setup");
   inicializa_visor();
   inicializa_rtc();
   Serial.println("Configurando botões");
@@ -27,11 +27,10 @@ void setup() {
   pinMode(PINO_RELE_VALVULA, OUTPUT);
   pinMode(PINO_RELE_BOMBA, OUTPUT);
   Serial.println("Setup Finalizado");
-  lcd.autoscroll();
+  //lcd.autoscroll();
   lcd.setCursor(1, 0);       // Coloca o cursor do display na coluna 1 e linha 1
   lcd.print("TESTE 1 2 3");  // Comando de saída com a mensagem que deve aparecer na coluna 2 e linha 1.
-  delay(5000);
-  lcd.print("  OLHAAA QUI");
+  Serial.println("Fim do Setup");
 }
 
 void loop() {
@@ -41,31 +40,36 @@ void loop() {
   bool botao3 = digitalRead(BOTAO3);
   leituraSensorUmidade = analogRead(PINO_UMIDADE_ANALOG);     // Leitura do pino analógico
   umidade_solo = map(leituraSensorUmidade, 0, 1023, 0, 255);  // Mapeia o valor analógia para o intervalo 0 a 255
+  // if (ultimo_minuto_lido != rtc.getMinute()){
   if (ultimo_dia_lido != rtc.getDate()) {
-    if (umidade_solo < 100) {
+    if (umidade_solo < umidade_valor_minimo_aceitavel) {
       digitalWrite(PINO_RELE_BOMBA, HIGH);
       digitalWrite(PINO_RELE_VALVULA, HIGH);
     }
-  }
-  if (botao1) {
-    digitalWrite(PINO_RELE_BOMBA, HIGH);
+    delay(60000);
   } else {
-    digitalWrite(PINO_RELE_BOMBA, LOW);
+    if (botao1) {
+      digitalWrite(PINO_RELE_BOMBA, HIGH);
+    } else {
+      digitalWrite(PINO_RELE_BOMBA, LOW);
+    }
+    if (botao2) {
+      digitalWrite(PINO_RELE_VALVULA, HIGH);
+    } else {
+      digitalWrite(PINO_RELE_VALVULA, LOW);
+    }
+    if (botao3) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Sensor leitura:");
+      lcd.setCursor(0, 1);
+      lcd.print(umidade_solo);
+      delay(2000);
+    } else {
+      mostra_data_hora_lcd();
+    }
   }
-  if (botao2) {
-    digitalWrite(PINO_RELE_VALVULA, HIGH);
-  } else {
-    digitalWrite(PINO_RELE_VALVULA, LOW);
-  }
-  if (botao3) {
-    lcd.clear();
-    lcd.setCursor(0, 1);
-    lcd.print("Sensor leitura:");
-    lcd.print(umidade_solo);
-    delay(1000);
-  } else {
-    mostra_data_hora_lcd();
-  }
+
   if (DEBUG) {
     if (UMIDADE_SOLO) {
       Serial.print("Umidade do Solo: Valor Anal: ");
@@ -143,14 +147,14 @@ void mostra_data_hora_lcd() {
       char data[32];
       char horario[32];
       sprintf(horario, "%02d:%02d:%02d ", rtc.getHour(), rtc.getMinute(), rtc.getSeconds());
-      sprintf(data, " %02d-%02d-%d  ", rtc.getMonth(), rtc.getDate(), rtc.getYear());
+      sprintf(data, " %02d/%02d/%d  ", rtc.getDate(),rtc.getMonth(), rtc.getYear());
       if (DEBUG) {
         Serial.println(data);
         Serial.println(horario);
       }
-      lcd.setCursor(1, 0);
+      lcd.setCursor(0, 0);
       lcd.print(data);
-      //lcd.setCursor(1, 1);
+      lcd.setCursor(1, 1);
       lcd.print(horario);
     }
   }
